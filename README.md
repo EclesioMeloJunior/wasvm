@@ -2,6 +2,12 @@
 
 A simple wasm interpreter (for leaning purpouses)
 
+### Running tests
+
+```
+go test ./...
+```
+
 Useful links 
 
 - https://webassembly.github.io/spec/
