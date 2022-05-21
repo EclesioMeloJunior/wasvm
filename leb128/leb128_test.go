@@ -1,6 +1,7 @@
 package leb128_test
 
 import (
+	"bytes"
 	"math"
 	"testing"
 
@@ -76,7 +77,7 @@ func TestDecodeUint(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result, err := leb128.DecodeUint(tt.enc)
+		result, err := leb128.DecodeUint(bytes.NewReader(tt.enc))
 		if tt.wantErr != nil {
 			assert.EqualError(t, err, tt.wantErr.Error())
 		} else {

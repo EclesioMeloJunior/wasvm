@@ -63,8 +63,7 @@ func EncodeInt(v int) (enc []byte) {
 	return enc
 }
 
-func DecodeUint(enc []byte) (result uint, err error) {
-	reader := bytes.NewReader(enc)
+func DecodeUint(reader *bytes.Reader) (result uint, err error) {
 	shift := 0
 
 	for {

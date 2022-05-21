@@ -2,11 +2,8 @@ package parser_test
 
 import (
 	"encoding/binary"
-	"fmt"
-	"io"
 	"testing"
 
-	"github.com/EclesioMeloJunior/gowasm/collections"
 	"github.com/EclesioMeloJunior/gowasm/parser"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +12,7 @@ import (
 const simpleWasm = "../tests/simple.wasm"
 
 func TestBinaryParse_MagicNumber_VersionNumber(t *testing.T) {
-	wasm, err := parser.NewWasm(simpleWasm)
+	wasm, err := parser.NewBinaryParser(simpleWasm)
 	assert.NoError(t, err)
 
 	err = wasm.ParseMagicNumber()
@@ -33,19 +30,16 @@ func TestBinaryParse_MagicNumber_VersionNumber(t *testing.T) {
 	assert.Equal(t, uint32(1), wasm.Module.Version)
 }
 
-func TestBinaryRead(t *testing.T) {
-	var iter collections.Iterator[byte]
-	iter, err := parser.NewWasm(simpleWasm)
+func TestBinaryParse_Sections(t *testing.T) {
+	wasm, err := parser.NewBinaryParser(simpleWasm)
 	assert.NoError(t, err)
 
-	for {
-		b, err := iter.Next()
-		if err != nil {
-			assert.ErrorIs(t, err, io.EOF)
-			break
-		}
+	err = wasm.ParseMagicNumber()
+	assert.NoError(t, err)
 
-		fmt.Printf("0x%x\n", b)
-	}
+	err = wasm.ParseVersion()
+	assert.NoError(t, err)
 
+	err = wasm.ParseSection()
+	assert.NoError(t, err)
 }
