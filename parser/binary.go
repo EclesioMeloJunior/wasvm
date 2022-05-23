@@ -51,6 +51,9 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 
 		sectionParsers: map[byte]SectionParser{
 			0x01: &TypeSectionParser{},
+			0x03: &FunctionSectionParser{},
+			0x07: &ExportSectionParser{},
+			0xA0: &CodeSectionParser{},
 		},
 	}, nil
 }
@@ -97,16 +100,20 @@ func (bp *BinaryParser) ParseSection() error {
 		return fmt.Errorf("cannot read section byte: %w", err)
 	}
 
-	contentsLen, err := leb128.DecodeUint(bp.reader.(*bytes.Reader))
+	sectionsLen, err := leb128.DecodeUint(bp.reader.(*bytes.Reader))
 	if err != nil {
 		return fmt.Errorf("cannot read section len: %w", err)
 	}
 
-	if contentsLen > 0 {
-		bp.parseSectionContents(sectionByte, contentsLen)
+	if sectionsLen > 0 {
+		err := bp.parseSectionContents(sectionByte, sectionsLen)
+		if err != nil {
+			return fmt.Errorf(
+				"cannot parse: %w", err)
+		}
 	}
 
-	return nil
+	return bp.ParseSection()
 }
 
 func (bp *BinaryParser) parseSectionContents(sectionID byte, sectionLen uint) error {
@@ -121,9 +128,14 @@ func (bp *BinaryParser) parseSectionContents(sectionID byte, sectionLen uint) er
 
 	parser, ok := bp.sectionParsers[sectionID]
 	if !ok {
-		return fmt.Errorf("empty parser for section ID %x", sectionID)
+		return fmt.Errorf("empty parser for section ID 0x%x", sectionID)
 	}
 
-	parser.Parse(bytes.NewReader(contents))
+	err = parser.Parse(bytes.NewReader(contents))
+	if err != nil {
+		return fmt.Errorf("failed while parsing section 0x%x: %w", sectionID, err)
+	}
+
+	bp.sectionParsers[sectionID] = parser
 	return nil
 }

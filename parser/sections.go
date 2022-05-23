@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/EclesioMeloJunior/gowasm/leb128"
+	"github.com/EclesioMeloJunior/gowasm/opcodes"
 )
 
 type FunctionSignatureParser struct {
-	Tag          byte
 	ParamsTypes  []Type
 	ResultsTypes []Type
 }
@@ -107,10 +107,7 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 		}
 
 		if typeTag == FunctionTag {
-			functionSigParser := &FunctionSignatureParser{
-				Tag: FunctionTag,
-			}
-
+			functionSigParser := &FunctionSignatureParser{}
 			if err := functionSigParser.Parser(b); err != nil {
 				return fmt.Errorf("cannot parse function signature at index %d: %w", i, err)
 			}
@@ -119,9 +116,169 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 		}
 	}
 
-	for _, f := range functions {
-		fmt.Printf("%s\n", f)
+	return nil
+}
+
+type Function struct {
+	Index     int
+	Signature *FunctionSectionParser
+	Locals    []byte
+	Body      []byte
+}
+
+type FunctionSectionParser struct {
+	Funcs []*Function
+}
+
+func (f *FunctionSectionParser) Parse(b *bytes.Reader) error {
+	funcsLen, err := leb128.DecodeUint(b)
+	if err != nil {
+		return fmt.Errorf("cannot read function amount: %w", err)
 	}
+
+	funcs := make([]*Function, funcsLen)
+	for i := 0; i < int(funcsLen); i++ {
+		funcIndex, err := leb128.DecodeUint(b)
+		if err != nil {
+			return fmt.Errorf("cannot read function type index at %d: %w", i, err)
+		}
+
+		funcs[i] = &Function{
+			Index: int(funcIndex),
+		}
+	}
+
+	f.Funcs = funcs
+	return nil
+}
+
+type Export struct {
+	Name string
+	// Type tells us what is being exported
+	// 0x00 funcidx
+	// 0x01 tableidx
+	// 0x02 memidx
+	// 0x03 globalidx
+	Type  byte
+	Index int
+}
+
+type ExportSectionParser struct {
+	Exports []*Export
+}
+
+func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
+	exportsLen, err := leb128.DecodeUint(b)
+	if err != nil {
+		return fmt.Errorf("cannot read number of exports: %w", err)
+	}
+
+	exports := make([]*Export, exportsLen)
+
+	for i := 0; i < int(exportsLen); i++ {
+		nameLen, err := leb128.DecodeUint(b)
+		if err != nil {
+			return fmt.Errorf("cannot read exported name length at %d: %w", i, err)
+		}
+
+		nameBytes := make([]byte, nameLen)
+		n, err := b.Read(nameBytes)
+		if err != nil {
+			return fmt.Errorf("cannot read exported name bytes at %d: %w", i, err)
+		} else if n != int(nameLen) {
+			return fmt.Errorf("expected name bytes length %d. got %d", nameLen, n)
+		}
+
+		exportType, err := b.ReadByte()
+		if err != nil {
+			return fmt.Errorf("cannot read exported type at %d: %w", i, err)
+		}
+
+		exportIdx, err := leb128.DecodeUint(b)
+		if err != nil {
+			return fmt.Errorf("cannot read exported index at %d: %w", i, err)
+		}
+
+		exports[i] = &Export{
+			Index: int(exportIdx),
+			Type:  exportType,
+			Name:  string(nameBytes),
+		}
+	}
+
+	e.Exports = exports
+	return nil
+}
+
+type Local struct {
+	Count uint
+	Type  Type
+}
+
+type CodeParser struct {
+	Expr   []byte
+	Locals []Local
+}
+
+func (c *CodeParser) Parse(b *bytes.Reader) error {
+	localsLen, err := leb128.DecodeUint(b)
+	if err != nil {
+		return fmt.Errorf("cannot read local length: %w", err)
+	}
+
+	if localsLen > 0 {
+		panic("locals not supported yet!")
+	}
+
+	locals := make([]Local, localsLen)
+	c.Locals = locals
+
+exprs:
+	for {
+		b, err := b.ReadByte()
+		if err != nil {
+			return err
+		} else if b == byte(opcodes.End) {
+			break
+		}
+
+	}
+	return nil
+}
+
+type CodeSectionParser struct {
+	FunctionsCode []*CodeParser
+}
+
+func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
+	amount, err := leb128.DecodeUint(b)
+	if err != nil {
+		return fmt.Errorf("cannot read number of functions: %w", err)
+	}
+
+	codes := make([]*CodeParser, amount)
+	for i := 0; i < int(amount); i++ {
+		totalCodeSize, err := leb128.DecodeUint(b)
+		if err != nil {
+			return fmt.Errorf("cannot read the code length at %d: %w", i, err)
+		}
+
+		code := make([]byte, totalCodeSize)
+		n, err := b.Read(code)
+		if err != nil {
+			return fmt.Errorf("cannot read the code at %d: %w", i, err)
+		} else if n != int(totalCodeSize) {
+			return fmt.Errorf("expected code bytes length %d. got %d", totalCodeSize, n)
+		}
+
+		codeParser := &CodeParser{}
+		err = codeParser.Parse(bytes.NewReader(code))
+		if err != nil {
+			return fmt.Errorf("cannot parse code instructions at %d: %w", i, err)
+		}
+	}
+
+	c.FunctionsCode = codes
 
 	return nil
 }
