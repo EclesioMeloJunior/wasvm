@@ -47,10 +47,13 @@ func TestSimpleWasm_BinaryParse_Sections(t *testing.T) {
 	assert.Len(t, typeSection.Types, 1)
 
 	for _, ttype := range typeSection.Types {
-		assert.Len(t, ttype.ParamsTypes, 0)
-		assert.Len(t, ttype.ResultsTypes, 1)
+		fs, ok := ttype.(*parser.FunctionSignatureParser)
+		assert.True(t, ok)
 
-		rt := ttype.ResultsTypes[0]
+		assert.Len(t, fs.ParamsTypes, 0)
+		assert.Len(t, fs.ResultsTypes, 1)
+
+		rt := fs.ResultsTypes[0]
 		assert.Equal(t, rt.SpecByte, parser.I32_NUM_TYPE)
 		assert.Equal(t, rt.SpecType, parser.NumType)
 	}
