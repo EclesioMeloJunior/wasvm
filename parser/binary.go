@@ -22,7 +22,7 @@ var (
 	ErrBytesLen = errors.New("unexpected bytes len")
 )
 
-type SectionParser interface {
+type Parser interface {
 	Parse(*bytes.Reader) error
 }
 
@@ -42,7 +42,7 @@ type BinaryParser struct {
 
 	Module *Module
 
-	Parsers map[byte]SectionParser
+	Parsers map[byte]Parser
 }
 
 func NewBinaryParser(filepath string) (*BinaryParser, error) {
@@ -56,7 +56,7 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 		filepath: filepath,
 		reader:   bytes.NewReader(fbytes),
 
-		Parsers: map[byte]SectionParser{
+		Parsers: map[byte]Parser{
 			TypeSection:     &TypeSectionParser{},
 			FunctionSection: &FunctionSectionParser{},
 			ExportSection:   &ExportSectionParser{},

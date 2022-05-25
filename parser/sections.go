@@ -39,7 +39,7 @@ func (f FunctionSignatureParser) String() string {
 	return result
 }
 
-func (f *FunctionSignatureParser) Parser(b *bytes.Reader) error {
+func (f *FunctionSignatureParser) Parse(b *bytes.Reader) error {
 	paramsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read params length: %w", err)
@@ -89,7 +89,7 @@ func (f *FunctionSignatureParser) Parser(b *bytes.Reader) error {
 }
 
 type TypeSectionParser struct {
-	Types []*FunctionSignatureParser
+	Types []Parser
 }
 
 func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
@@ -98,7 +98,7 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 		return fmt.Errorf("cannot read type section length: %w", err)
 	}
 
-	funcSignatureTypes := make([]*FunctionSignatureParser, 0, typeSectionLen)
+	funcSignatureTypes := make([]Parser, 0, typeSectionLen)
 
 	for i := 0; i < int(typeSectionLen); i++ {
 		typeTag, err := b.ReadByte()
@@ -108,7 +108,7 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 
 		if typeTag == FunctionTag {
 			functionSigParser := &FunctionSignatureParser{}
-			if err := functionSigParser.Parser(b); err != nil {
+			if err := functionSigParser.Parse(b); err != nil {
 				return fmt.Errorf("cannot parse function signature at index %d: %w", i, err)
 			}
 
@@ -122,9 +122,8 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 
 type Function struct {
 	Index     int
-	Signature *FunctionSectionParser
-	Locals    []byte
-	Body      []byte
+	Signature *FunctionSignatureParser
+	Code      *CodeParser
 }
 
 type FunctionSectionParser struct {
