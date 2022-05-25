@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/EclesioMeloJunior/gowasm/leb128"
-	"github.com/EclesioMeloJunior/gowasm/opcodes"
+	"github.com/EclesioMeloJunior/wasvm/leb128"
+	"github.com/EclesioMeloJunior/wasvm/opcodes"
 )
 
 type FunctionSignatureParser struct {
@@ -153,6 +153,15 @@ func (f *FunctionSectionParser) Parse(b *bytes.Reader) error {
 	return nil
 }
 
+type ExportedType byte
+
+const (
+	ExportedFunc   ExportedType = 0x00
+	ExportedTable  ExportedType = 0x01
+	ExportedMem    ExportedType = 0x02
+	ExportedGlobal ExportedType = 0x03
+)
+
 type Export struct {
 	Name string
 	// Type tells us what is being exported
@@ -160,7 +169,7 @@ type Export struct {
 	// 0x01 tableidx
 	// 0x02 memidx
 	// 0x03 globalidx
-	Type  byte
+	Type  ExportedType
 	Index int
 }
 
@@ -202,7 +211,7 @@ func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
 
 		exports[i] = &Export{
 			Index: int(exportIdx),
-			Type:  exportType,
+			Type:  ExportedType(exportType),
 			Name:  string(nameBytes),
 		}
 	}
@@ -238,11 +247,12 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 		b, err := b.ReadByte()
 		if err != nil {
 			return err
-		} else if b == byte(opcodes.End) {
-			break
 		}
 
 		body = append(body, b)
+		if b == byte(opcodes.End) {
+			break
+		}
 	}
 
 	c.Body = body
@@ -279,6 +289,8 @@ func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
 		if err != nil {
 			return fmt.Errorf("cannot parse code instructions at %d: %w", i, err)
 		}
+
+		codes[i] = codeParser
 	}
 
 	c.FunctionsCode = codes

@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/EclesioMeloJunior/gowasm/leb128"
+	"github.com/EclesioMeloJunior/wasvm/leb128"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

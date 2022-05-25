@@ -1,1 +1,1 @@
-package gowasm
+package wasvm

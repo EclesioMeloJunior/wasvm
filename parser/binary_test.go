@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/EclesioMeloJunior/gowasm/parser"
+	"github.com/EclesioMeloJunior/wasvm/parser"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +30,7 @@ func TestBinaryParse_MagicNumber_VersionNumber(t *testing.T) {
 	assert.Equal(t, uint32(1), wasm.Module.Version)
 }
 
-func TestBinaryParse_Sections(t *testing.T) {
+func TestSimpleWasm_BinaryParse_Sections(t *testing.T) {
 	wasm, err := parser.NewBinaryParser(simpleWasm)
 	assert.NoError(t, err)
 
@@ -43,15 +43,44 @@ func TestBinaryParse_Sections(t *testing.T) {
 	err = wasm.ParseSection()
 	assert.NoError(t, err)
 
-	ts := wasm.Parsers[parser.TypeSection].(*parser.TypeSectionParser)
-	assert.Len(t, ts.Types, 1)
+	typeSection := wasm.Parsers[parser.TypeSection].(*parser.TypeSectionParser)
+	assert.Len(t, typeSection.Types, 1)
 
-	for _, ttype := range ts.Types {
+	for _, ttype := range typeSection.Types {
 		assert.Len(t, ttype.ParamsTypes, 0)
 		assert.Len(t, ttype.ResultsTypes, 1)
 
 		rt := ttype.ResultsTypes[0]
 		assert.Equal(t, rt.SpecByte, parser.I32_NUM_TYPE)
 		assert.Equal(t, rt.SpecType, parser.NumType)
+	}
+
+	functionSection := wasm.Parsers[parser.FunctionSection].(*parser.FunctionSectionParser)
+	assert.Len(t, functionSection.Funcs, 1)
+
+	for _, f := range functionSection.Funcs {
+		assert.Equal(t, f.Index, 0)
+	}
+
+	exportSection := wasm.Parsers[parser.ExportSection].(*parser.ExportSectionParser)
+	assert.Len(t, exportSection.Exports, 1)
+
+	for _, exported := range exportSection.Exports {
+		assert.Equal(t, exported.Name, "helloWorld")
+		assert.Equal(t, exported.Index, 0)
+		assert.Equal(t, exported.Type, parser.ExportedFunc)
+	}
+
+	codeSection := wasm.Parsers[parser.CodeSection].(*parser.CodeSectionParser)
+	assert.Len(t, codeSection.FunctionsCode, 1)
+
+	for _, code := range codeSection.FunctionsCode {
+		assert.Len(t, code.Locals, 0)
+		assert.Len(t, code.Body, 3)
+
+		expectedBody := []byte{0x41, 0x2A, 0x0B}
+		for idx, instr := range expectedBody {
+			assert.Equal(t, code.Body[idx], instr)
+		}
 	}
 }

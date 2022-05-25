@@ -1,4 +1,4 @@
-module github.com/EclesioMeloJunior/gowasm
+module github.com/EclesioMeloJunior/wasvm
 
 go 1.18
 

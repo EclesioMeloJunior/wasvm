@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/EclesioMeloJunior/gowasm/leb128"
+	"github.com/EclesioMeloJunior/wasvm/leb128"
 )
 
 const (
