@@ -42,4 +42,16 @@ func TestBinaryParse_Sections(t *testing.T) {
 
 	err = wasm.ParseSection()
 	assert.NoError(t, err)
+
+	ts := wasm.Parsers[parser.TypeSection].(*parser.TypeSectionParser)
+	assert.Len(t, ts.Types, 1)
+
+	for _, ttype := range ts.Types {
+		assert.Len(t, ttype.ParamsTypes, 0)
+		assert.Len(t, ttype.ResultsTypes, 1)
+
+		rt := ttype.ResultsTypes[0]
+		assert.Equal(t, rt.SpecByte, parser.I32_NUM_TYPE)
+		assert.Equal(t, rt.SpecType, parser.NumType)
+	}
 }

@@ -1,6 +1,6 @@
-# gowasm
+# wasvm
 
-A simple wasm interpreter (for leaning purpouses)
+A simple wasm interpreter/runtime (for leaning purpouses)
 
 ### Running tests
 

@@ -11,6 +11,17 @@ import (
 	"github.com/EclesioMeloJunior/gowasm/leb128"
 )
 
+const (
+	TypeSection     byte = 0x01
+	FunctionSection byte = 0x03
+	ExportSection   byte = 0x07
+	CodeSection     byte = 0x0A
+)
+
+var (
+	ErrBytesLen = errors.New("unexpected bytes len")
+)
+
 type SectionParser interface {
 	Parse(*bytes.Reader) error
 }
@@ -19,10 +30,6 @@ type BinaryReader interface {
 	io.Reader
 	io.ByteReader
 }
-
-var (
-	ErrBytesLen = errors.New("unexpected bytes len")
-)
 
 type Module struct {
 	Magic   uint32 // magic number >`\0asm`
@@ -35,7 +42,7 @@ type BinaryParser struct {
 
 	Module *Module
 
-	sectionParsers map[byte]SectionParser
+	Parsers map[byte]SectionParser
 }
 
 func NewBinaryParser(filepath string) (*BinaryParser, error) {
@@ -49,11 +56,11 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 		filepath: filepath,
 		reader:   bytes.NewReader(fbytes),
 
-		sectionParsers: map[byte]SectionParser{
-			0x01: &TypeSectionParser{},
-			0x03: &FunctionSectionParser{},
-			0x07: &ExportSectionParser{},
-			0xA0: &CodeSectionParser{},
+		Parsers: map[byte]SectionParser{
+			TypeSection:     &TypeSectionParser{},
+			FunctionSection: &FunctionSectionParser{},
+			ExportSection:   &ExportSectionParser{},
+			CodeSection:     &CodeSectionParser{},
 		},
 	}, nil
 }
@@ -96,7 +103,9 @@ func (bp *BinaryParser) ParseVersion() error {
 
 func (bp *BinaryParser) ParseSection() error {
 	sectionByte, err := bp.reader.ReadByte()
-	if err != nil {
+	if errors.Is(err, io.EOF) {
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("cannot read section byte: %w", err)
 	}
 
@@ -126,7 +135,7 @@ func (bp *BinaryParser) parseSectionContents(sectionID byte, sectionLen uint) er
 		return fmt.Errorf("expected %d bytes. read %d bytes", sectionLen, n)
 	}
 
-	parser, ok := bp.sectionParsers[sectionID]
+	parser, ok := bp.Parsers[sectionID]
 	if !ok {
 		return fmt.Errorf("empty parser for section ID 0x%x", sectionID)
 	}
@@ -136,6 +145,6 @@ func (bp *BinaryParser) parseSectionContents(sectionID byte, sectionLen uint) er
 		return fmt.Errorf("failed while parsing section 0x%x: %w", sectionID, err)
 	}
 
-	bp.sectionParsers[sectionID] = parser
+	bp.Parsers[sectionID] = parser
 	return nil
 }

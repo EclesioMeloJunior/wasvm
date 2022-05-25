@@ -98,7 +98,7 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 		return fmt.Errorf("cannot read type section length: %w", err)
 	}
 
-	functions := make([]*FunctionSignatureParser, 0, typeSectionLen)
+	funcSignatureTypes := make([]*FunctionSignatureParser, 0, typeSectionLen)
 
 	for i := 0; i < int(typeSectionLen); i++ {
 		typeTag, err := b.ReadByte()
@@ -112,10 +112,11 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 				return fmt.Errorf("cannot parse function signature at index %d: %w", i, err)
 			}
 
-			functions = append(functions, functionSigParser)
+			funcSignatureTypes = append(funcSignatureTypes, functionSigParser)
 		}
 	}
 
+	t.Types = funcSignatureTypes
 	return nil
 }
 
@@ -216,7 +217,7 @@ type Local struct {
 }
 
 type CodeParser struct {
-	Expr   []byte
+	Body   []byte
 	Locals []Local
 }
 
@@ -230,10 +231,9 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 		panic("locals not supported yet!")
 	}
 
-	locals := make([]Local, localsLen)
-	c.Locals = locals
+	c.Locals = make([]Local, localsLen)
 
-exprs:
+	body := make([]byte, 0)
 	for {
 		b, err := b.ReadByte()
 		if err != nil {
@@ -242,7 +242,10 @@ exprs:
 			break
 		}
 
+		body = append(body, b)
 	}
+
+	c.Body = body
 	return nil
 }
 
