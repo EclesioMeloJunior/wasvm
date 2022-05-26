@@ -152,6 +152,11 @@ func (f *FunctionSectionParser) Parse(b *bytes.Reader) error {
 	return nil
 }
 
+// Type tells us what is being exported
+// 0x00 funcidx
+// 0x01 tableidx
+// 0x02 memidx
+// 0x03 globalidx
 type ExportedType byte
 
 const (
@@ -162,12 +167,7 @@ const (
 )
 
 type Export struct {
-	Name string
-	// Type tells us what is being exported
-	// 0x00 funcidx
-	// 0x01 tableidx
-	// 0x02 memidx
-	// 0x03 globalidx
+	Name  string
 	Type  ExportedType
 	Index int
 }

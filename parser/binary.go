@@ -32,8 +32,8 @@ type BinaryReader interface {
 }
 
 type Module struct {
-	Magic   uint32 // magic number >`\0asm`
-	Version uint32 // version
+	Magic   uint32
+	Version uint32
 }
 
 type BinaryParser struct {
