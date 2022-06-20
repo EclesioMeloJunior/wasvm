@@ -1,7 +1,6 @@
 package vm_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/EclesioMeloJunior/wasvm/parser"
@@ -12,12 +11,18 @@ import (
 const simpleWasm = "../tests/simple.wasm"
 
 func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
-	wasm, err := parser.NewBinaryParser(simpleWasm)
+	binaryWASM, err := parser.BinaryFormat(simpleWasm)
 	assert.NoError(t, err)
 
-	rt, err := vm.NewRuntime(wasm)
+	rt, err := vm.NewRuntime(binaryWASM)
 	assert.NoError(t, err)
 
-	// TODO: check why the exported function is not exported
-	fmt.Println(rt.Exported)
+	assert.Len(t, rt.Exported, 1)
+
+	const exportedFun = "helloWorld"
+	callFrame, ok := rt.Exported[exportedFun]
+	assert.True(t, ok)
+	assert.NotNil(t, callFrame)
+
+	callFrame.Call()
 }

@@ -10,30 +10,30 @@ var (
 	ErrFunctionWithouCode      = errors.New("function does not have a respective code")
 )
 
-func BinaryFormat(filepath string) error {
+func BinaryFormat(filepath string) (*BinaryParser, error) {
 	bp, err := NewBinaryParser(filepath)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("cannot instantiate a binary parser: %w", err)
 	}
 
 	// starting parsing the `wasm header` values
 	if err := bp.ParseMagicNumber(); err != nil {
-		return fmt.Errorf("cannot parse magic number: %w", err)
+		return nil, fmt.Errorf("cannot parse magic number: %w", err)
 	}
 
 	if err := bp.ParseVersion(); err != nil {
-		return fmt.Errorf("cannot parse version: %w", err)
+		return nil, fmt.Errorf("cannot parse version: %w", err)
 	}
 
 	if err := bp.ParseSection(); err != nil {
-		return fmt.Errorf("cannot parse section: %w", err)
+		return nil, fmt.Errorf("cannot parse section: %w", err)
 	}
 
 	if err := bondFunctionSignatureAndCode(bp); err != nil {
-		return fmt.Errorf("cannot bond function parts: %w", err)
+		return nil, fmt.Errorf("cannot bond function parts: %w", err)
 	}
 
-	return nil
+	return bp, nil
 }
 
 func bondFunctionSignatureAndCode(bp *BinaryParser) error {

@@ -52,15 +52,15 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 	}
 
 	return &BinaryParser{
-		Module:   &Module{},
+		Module:   new(Module),
 		filepath: filepath,
 		reader:   bytes.NewReader(fbytes),
 
 		Parsers: map[byte]Parser{
-			TypeSection:     &TypeSectionParser{},
-			FunctionSection: &FunctionSectionParser{},
-			ExportSection:   &ExportSectionParser{},
-			CodeSection:     &CodeSectionParser{},
+			TypeSection:     new(TypeSectionParser),
+			FunctionSection: new(FunctionSectionParser),
+			ExportSection:   new(ExportSectionParser),
+			CodeSection:     new(CodeSectionParser),
 		},
 	}, nil
 }

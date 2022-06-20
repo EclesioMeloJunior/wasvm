@@ -89,22 +89,24 @@ func TestDecodeUint(t *testing.T) {
 
 func TestDecodeInt32(t *testing.T) {
 	tests := []struct {
-		enc      []byte
-		expected int32
-		wantErr  error
+		enc                 []byte
+		expected, bytesRead int32
+		wantErr             error
 	}{
-		{enc: []byte{0x13}, expected: 19},
-		{enc: []byte{0x00}, expected: 0},
-		{enc: []byte{0x04}, expected: 4},
-		{enc: []byte{0xFF, 0x00}, expected: 127},
-		{enc: []byte{0x81, 0x01}, expected: 129},
-		{enc: []byte{0x7f}, expected: -1},
-		{enc: []byte{0x81, 0x7f}, expected: -127},
-		{enc: []byte{0xFF, 0x7e}, expected: -129},
+		{enc: []byte{0x13}, expected: 19, bytesRead: 1},
+		{enc: []byte{0x00}, expected: 0, bytesRead: 1},
+		{enc: []byte{0x04}, expected: 4, bytesRead: 1},
+		{enc: []byte{0xFF, 0x00}, expected: 127, bytesRead: 2},
+		{enc: []byte{0x81, 0x01}, expected: 129, bytesRead: 2},
+		{enc: []byte{0x7f}, expected: -1, bytesRead: 1},
+		{enc: []byte{0x81, 0x7f}, expected: -127, bytesRead: 2},
+		{enc: []byte{0xFF, 0x7e}, expected: -129, bytesRead: 2},
 	}
 
 	for _, tt := range tests {
-		result, err := leb128.DecodeInt[int32](tt.enc)
+		n, result, err := leb128.DecodeInt[int32](bytes.NewReader(tt.enc))
+		assert.Equal(t, tt.bytesRead, n)
+
 		if tt.wantErr != nil {
 			assert.EqualError(t, err, tt.wantErr.Error())
 		} else {
@@ -132,7 +134,7 @@ func TestDecodeInt64(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result, err := leb128.DecodeInt[int64](tt.enc)
+		_, result, err := leb128.DecodeInt[int64](bytes.NewReader(tt.enc))
 		if tt.wantErr != nil {
 			assert.EqualError(t, err, tt.wantErr.Error())
 		} else {
