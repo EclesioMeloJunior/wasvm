@@ -6,6 +6,7 @@ import (
 	"github.com/EclesioMeloJunior/wasvm/parser"
 	"github.com/EclesioMeloJunior/wasvm/vm"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const simpleWasm = "../tests/simple.wasm"
@@ -24,5 +25,13 @@ func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, callFrame)
 
-	callFrame.Call()
+	results, err := callFrame.Call()
+	assert.NoError(t, err)
+
+	require.Len(t, results, 1)
+	result0 := results[0]
+	value, ok := result0.(int32)
+
+	require.True(t, ok)
+	require.Equal(t, int32(42), value)
 }

@@ -55,7 +55,7 @@ func exposeExportedFunctions(runtime *Runtime) error {
 func buildExportedFunction(f *parser.Function) *callFrame {
 	cf := &callFrame{
 		pc:           0,
-		stack:        make([]StackValue, 1024),
+		stack:        make([]StackValue, 0, 1024),
 		instructions: f.Code.Body,
 		params:       make([]any, len(f.Signature.ParamsTypes)),
 		results:      make([]any, len(f.Signature.ResultsTypes)),

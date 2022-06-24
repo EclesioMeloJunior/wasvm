@@ -1,5 +1,7 @@
 package vm
 
+import "fmt"
+
 type Instruction byte
 
 func (i Instruction) String() string {
@@ -7,7 +9,7 @@ func (i Instruction) String() string {
 	case i32Const:
 		return "i32.const"
 	default:
-		return "?"
+		return fmt.Sprintf("%x", byte(i))
 	}
 }
 
