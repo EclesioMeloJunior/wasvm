@@ -1,7 +1,6 @@
 package vm_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/EclesioMeloJunior/wasvm/parser"
@@ -46,8 +45,6 @@ func TestSumWasm(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Len(t, rt.Exported, 1)
-
-	fmt.Println(rt.Exported)
 
 	const exportedFun = "sum"
 	sumCallFrame, ok := rt.Exported[exportedFun]

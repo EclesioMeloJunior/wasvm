@@ -9,42 +9,9 @@ import (
 )
 
 var (
-	ErrStackOverflow    = errors.New("stackoverflow")
-	ErrEmptyStack       = errors.New("empty stack")
 	ErrParamOutOfBounds = errors.New("param out of bounds")
 	ErrWrongType        = errors.New("wrong type")
 )
-
-type StackValue struct {
-	value   any
-	startAt uint
-	endAt   uint
-}
-
-type Stack []StackValue
-
-func (s *Stack) push(value StackValue) error {
-	defPointer := *s
-	if len(defPointer) >= cap(defPointer) {
-		return fmt.Errorf("%w: limit %d", ErrStackOverflow, cap(defPointer))
-	}
-
-	*s = append(defPointer, value)
-	return nil
-}
-
-func (s *Stack) pop() (value StackValue, err error) {
-	defPointer := *s
-	if len(defPointer) == 0 {
-		return value, ErrEmptyStack
-	}
-
-	removeAt := len(defPointer) - 1
-	value = defPointer[removeAt]
-
-	*s = defPointer[:removeAt]
-	return value, nil
-}
 
 type callFrame struct {
 	pc    uint
@@ -60,8 +27,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 		currentInstruction := Instruction(c.instructions[c.pc])
 
 		switch currentInstruction {
-		// push the parameter onto the stack
 		case localGet:
+			// push the parameter onto the stack.
 			// advance the pointer counter to get the variable index
 			c.pc += 1
 			bytesRead, paramAt, err := leb128.DecodeUint(bytes.NewReader(c.instructions[c.pc:]))
@@ -81,36 +48,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			c.pc += uint(bytesRead)
 
-		case i32Add:
-			rhs, err := c.stack.pop()
-			if err != nil {
-				return nil, fmt.Errorf("cannot pop: %w", err)
-			}
-
-			lhs, err := c.stack.pop()
-			if err != nil {
-				return nil, fmt.Errorf("cannot pop: %w", err)
-			}
-
-			rhsI32, ok := rhs.value.(int32)
-			if !ok {
-				return nil, fmt.Errorf("%w: expected i32. got %T",
-					ErrWrongType, rhs.value)
-			}
-
-			lhsI32, ok := lhs.value.(int32)
-			if !ok {
-				return nil, fmt.Errorf("%w: expected i32. got %T",
-					ErrWrongType, rhs.value)
-			}
-
-			c.stack.push(StackValue{
-				value: lhsI32 + rhsI32,
-			})
-
-			c.pc++
-
 		case i32Const:
+			// push the i32 leb128 encoded value onto the stack.
 			// lets start read the encoded number
 			c.pc += 1
 			bytesRead, value, err := leb128.DecodeInt[int32](
@@ -128,6 +67,40 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			c.stack.push(stackBasedValue)
 			c.pc += uint(bytesRead)
+
+		case i32Add:
+			rhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			lhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			c.stack.push(StackValue{
+				value: lhs + rhs,
+			})
+
+			c.pc++
+
+		case i32Sub:
+			rhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			lhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			c.stack.push(StackValue{
+				value: lhs - rhs,
+			})
+
+			c.pc++
 		case End:
 			if len(c.results) > 0 && len(c.stack) == 0 {
 				return nil, fmt.Errorf("stack empty but expected %d return(s)",
