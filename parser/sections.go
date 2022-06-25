@@ -40,7 +40,7 @@ func (f FunctionSignatureParser) String() string {
 }
 
 func (f *FunctionSignatureParser) Parse(b *bytes.Reader) error {
-	paramsLen, err := leb128.DecodeUint(b)
+	_, paramsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read params length: %w", err)
 	}
@@ -61,7 +61,7 @@ func (f *FunctionSignatureParser) Parse(b *bytes.Reader) error {
 		}
 	}
 
-	resultsLen, err := leb128.DecodeUint(b)
+	_, resultsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read results length: %w", err)
 	}
@@ -93,7 +93,7 @@ type TypeSectionParser struct {
 }
 
 func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
-	typeSectionLen, err := leb128.DecodeUint(b)
+	_, typeSectionLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read type section length: %w", err)
 	}
@@ -131,14 +131,14 @@ type FunctionSectionParser struct {
 }
 
 func (f *FunctionSectionParser) Parse(b *bytes.Reader) error {
-	funcsLen, err := leb128.DecodeUint(b)
+	_, funcsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read function amount: %w", err)
 	}
 
 	funcs := make([]*Function, funcsLen)
 	for i := 0; i < int(funcsLen); i++ {
-		funcIndex, err := leb128.DecodeUint(b)
+		_, funcIndex, err := leb128.DecodeUint(b)
 		if err != nil {
 			return fmt.Errorf("cannot read function type index at %d: %w", i, err)
 		}
@@ -177,7 +177,7 @@ type ExportSectionParser struct {
 }
 
 func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
-	exportsLen, err := leb128.DecodeUint(b)
+	_, exportsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read number of exports: %w", err)
 	}
@@ -185,7 +185,7 @@ func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
 	exports := make([]*Export, exportsLen)
 
 	for i := 0; i < int(exportsLen); i++ {
-		nameLen, err := leb128.DecodeUint(b)
+		_, nameLen, err := leb128.DecodeUint(b)
 		if err != nil {
 			return fmt.Errorf("cannot read exported name length at %d: %w", i, err)
 		}
@@ -203,7 +203,7 @@ func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
 			return fmt.Errorf("cannot read exported type at %d: %w", i, err)
 		}
 
-		exportIdx, err := leb128.DecodeUint(b)
+		_, exportIdx, err := leb128.DecodeUint(b)
 		if err != nil {
 			return fmt.Errorf("cannot read exported index at %d: %w", i, err)
 		}
@@ -230,7 +230,7 @@ type CodeParser struct {
 }
 
 func (c *CodeParser) Parse(b *bytes.Reader) error {
-	localsLen, err := leb128.DecodeUint(b)
+	_, localsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read local length: %w", err)
 	}
@@ -263,14 +263,14 @@ type CodeSectionParser struct {
 }
 
 func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
-	amount, err := leb128.DecodeUint(b)
+	_, amount, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read number of functions: %w", err)
 	}
 
 	codes := make([]*CodeParser, amount)
 	for i := 0; i < int(amount); i++ {
-		totalCodeSize, err := leb128.DecodeUint(b)
+		_, totalCodeSize, err := leb128.DecodeUint(b)
 		if err != nil {
 			return fmt.Errorf("cannot read the code length at %d: %w", i, err)
 		}

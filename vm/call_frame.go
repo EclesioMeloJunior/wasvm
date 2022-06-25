@@ -8,8 +8,12 @@ import (
 	"github.com/EclesioMeloJunior/wasvm/leb128"
 )
 
-var ErrStackOverflow = errors.New("stackoverflow")
-var ErrEmptyStack = errors.New("empty stack")
+var (
+	ErrStackOverflow    = errors.New("stackoverflow")
+	ErrEmptyStack       = errors.New("empty stack")
+	ErrParamOutOfBounds = errors.New("param out of bounds")
+	ErrWrongType        = errors.New("wrong type")
+)
 
 type StackValue struct {
 	value   any
@@ -56,6 +60,56 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 		currentInstruction := Instruction(c.instructions[c.pc])
 
 		switch currentInstruction {
+		// push the parameter onto the stack
+		case localGet:
+			// advance the pointer counter to get the variable index
+			c.pc += 1
+			bytesRead, paramAt, err := leb128.DecodeUint(bytes.NewReader(c.instructions[c.pc:]))
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode u32 local index: %w", err)
+			}
+
+			if len(params) < int(paramAt) {
+				return nil, ErrParamOutOfBounds
+			}
+
+			c.stack.push(StackValue{
+				value:   params[paramAt],
+				startAt: c.pc,
+				endAt:   c.pc + uint(bytesRead),
+			})
+
+			c.pc += uint(bytesRead)
+
+		case i32Add:
+			rhs, err := c.stack.pop()
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			lhs, err := c.stack.pop()
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			rhsI32, ok := rhs.value.(int32)
+			if !ok {
+				return nil, fmt.Errorf("%w: expected i32. got %T",
+					ErrWrongType, rhs.value)
+			}
+
+			lhsI32, ok := lhs.value.(int32)
+			if !ok {
+				return nil, fmt.Errorf("%w: expected i32. got %T",
+					ErrWrongType, rhs.value)
+			}
+
+			c.stack.push(StackValue{
+				value: lhsI32 + rhsI32,
+			})
+
+			c.pc++
+
 		case i32Const:
 			// lets start read the encoded number
 			c.pc += 1
@@ -68,8 +122,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			stackBasedValue := StackValue{
 				value:   value,
-				startAt: uint(c.pc),
-				endAt:   uint(c.pc + uint(bytesRead)),
+				startAt: c.pc,
+				endAt:   c.pc + uint(bytesRead),
 			}
 
 			c.stack.push(stackBasedValue)

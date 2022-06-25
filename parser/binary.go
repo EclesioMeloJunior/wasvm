@@ -109,7 +109,7 @@ func (bp *BinaryParser) ParseSection() error {
 		return fmt.Errorf("cannot read section byte: %w", err)
 	}
 
-	sectionsLen, err := leb128.DecodeUint(bp.reader.(*bytes.Reader))
+	_, sectionsLen, err := leb128.DecodeUint(bp.reader.(*bytes.Reader))
 	if err != nil {
 		return fmt.Errorf("cannot read section len: %w", err)
 	}

@@ -63,14 +63,16 @@ func EncodeInt(v int) (enc []byte) {
 	return enc
 }
 
-func DecodeUint(reader *bytes.Reader) (result uint, err error) {
+func DecodeUint(reader *bytes.Reader) (read int, result uint, err error) {
 	shift := 0
 
 	for {
 		b, err := reader.ReadByte()
 		if err != nil {
-			return result, fmt.Errorf("%w: %s", ErrCannotReadNextByte, err.Error())
+			return read, result, fmt.Errorf("%w: %s", ErrCannotReadNextByte, err.Error())
 		}
+
+		read += 1
 
 		result |= (uint(b&0x7f) << shift)
 
@@ -81,7 +83,7 @@ func DecodeUint(reader *bytes.Reader) (result uint, err error) {
 		shift += 7
 	}
 
-	return result, nil
+	return read, result, nil
 }
 
 func DecodeInt[T int32 | int64](reader *bytes.Reader) (read int, result T, err error) {

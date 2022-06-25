@@ -61,28 +61,30 @@ func TestEncodeUint(t *testing.T) {
 func TestDecodeUint(t *testing.T) {
 	tests := []struct {
 		enc      []byte
+		read     int
 		expected uint
 		wantErr  error
 	}{
-		{enc: []byte{0x00}, expected: 0},
-		{enc: []byte{0x04}, expected: 4},
-		{enc: []byte{0x01}, expected: 1},
-		{enc: []byte{0x80, 0}, expected: 0},
-		{enc: []byte{0x80, 0x7f}, expected: 16256},
-		{enc: []byte{0xe5, 0x8e, 0x26}, expected: 624485},
-		{enc: []byte{0x80, 0x80, 0x80, 0x4f}, expected: 165675008},
-		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xf}, expected: 0xffffffff},
-		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xf}, expected: math.MaxUint32},
-		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1}, expected: math.MaxUint64},
+		{enc: []byte{0x00}, expected: 0, read: 1},
+		{enc: []byte{0x04}, expected: 4, read: 1},
+		{enc: []byte{0x01}, expected: 1, read: 1},
+		{enc: []byte{0x80, 0}, expected: 0, read: 2},
+		{enc: []byte{0x80, 0x7f}, expected: 16256, read: 2},
+		{enc: []byte{0xe5, 0x8e, 0x26}, expected: 624485, read: 3},
+		{enc: []byte{0x80, 0x80, 0x80, 0x4f}, expected: 165675008, read: 4},
+		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xf}, expected: 0xffffffff, read: 5},
+		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xf}, expected: math.MaxUint32, read: 5},
+		{enc: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1}, expected: math.MaxUint64, read: 10},
 	}
 
 	for _, tt := range tests {
-		result, err := leb128.DecodeUint(bytes.NewReader(tt.enc))
+		bytesRead, result, err := leb128.DecodeUint(bytes.NewReader(tt.enc))
 		if tt.wantErr != nil {
 			assert.EqualError(t, err, tt.wantErr.Error())
 		} else {
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.read, bytesRead)
 		}
 	}
 }
