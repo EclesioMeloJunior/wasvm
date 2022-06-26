@@ -46,22 +46,25 @@ func bondFunctionSignatureAndCode(bp *BinaryParser) error {
 	codeSection := bp.Parsers[CodeSection].(*CodeSectionParser)
 
 	for idx, function := range functionSection.Funcs {
-		if len(typeSection.Types) < function.Index {
-			return fmt.Errorf("%w: %d", ErrFunctionWithouSignature, function.Index)
+		if len(typeSection.Types) < function.TypeIndex {
+			return fmt.Errorf("%w: %d", ErrFunctionWithouSignature, function.TypeIndex)
 		}
 
-		ttype := typeSection.Types[function.Index]
+		ttype := typeSection.Types[function.TypeIndex]
 		signature, ok := ttype.(*FunctionSignatureParser)
 		if !ok {
 			return fmt.Errorf("%w: expected *FunctionSignatureParser, got: %T",
 				ErrFunctionWithouSignature, ttype)
 		}
 
-		if len(codeSection.FunctionsCode) < function.Index {
-			return fmt.Errorf("%w: %d", ErrFunctionWithouCode, function.Index)
+		// each index correspond to a code in the code section, if there is no
+		// code for the current index then we must return an error
+		if len(codeSection.FunctionsCode) < idx {
+			return fmt.Errorf("%w: %d", ErrFunctionWithouCode, function.TypeIndex)
 		}
 
-		code := codeSection.FunctionsCode[function.Index]
+		code := codeSection.FunctionsCode[idx]
+
 		functionSection.Funcs[idx].Code = code
 		functionSection.Funcs[idx].Signature = signature
 	}

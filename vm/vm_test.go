@@ -10,7 +10,7 @@ import (
 )
 
 const simpleWasm = "../resources/simple.wasm"
-const sumWasm = "../resources/sum.wasm"
+const operationsWasm = "../resources/operations.wasm"
 
 func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
 	binaryWASM, err := parser.BinaryFormat(simpleWasm)
@@ -37,26 +37,50 @@ func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
 	require.Equal(t, int32(42), value)
 }
 
-func TestSumWasm(t *testing.T) {
-	binaryWASM, err := parser.BinaryFormat(sumWasm)
+func TestOperationsWasm(t *testing.T) {
+	binaryWASM, err := parser.BinaryFormat(operationsWasm)
 	assert.NoError(t, err)
 
 	rt, err := vm.NewRuntime(binaryWASM)
 	assert.NoError(t, err)
+	assert.Len(t, rt.Exported, 3)
 
-	assert.Len(t, rt.Exported, 1)
+	tests := []struct {
+		function string
+		lhs      int32
+		rhs      int32
+		expected int32
+	}{
+		{
+			function: "sum",
+			lhs:      10,
+			rhs:      10,
+			expected: 20,
+		},
+		{
+			function: "sub",
+			lhs:      0,
+			rhs:      1,
+			expected: -1,
+		},
+		{
+			function: "mul",
+			lhs:      9,
+			rhs:      8,
+			expected: 72,
+		},
+	}
 
-	const exportedFun = "sum"
-	sumCallFrame, ok := rt.Exported[exportedFun]
-	assert.True(t, ok)
+	for _, tt := range tests {
+		callFrame, ok := rt.Exported[tt.function]
+		assert.True(t, ok)
 
-	results, err := sumCallFrame.Call(int32(10), int32(20))
-	assert.NoError(t, err)
-	require.Len(t, results, 1)
+		results, err := callFrame.Call(tt.lhs, tt.rhs)
+		assert.NoError(t, err)
+		require.Len(t, results, 1)
 
-	sumResult, ok := results[0].(int32)
-	require.True(t, ok)
-
-	const expected = int32(30)
-	assert.Equal(t, expected, sumResult)
+		result, ok := results[0].(int32)
+		require.True(t, ok)
+		assert.Equal(t, tt.expected, result)
+	}
 }

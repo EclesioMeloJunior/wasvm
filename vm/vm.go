@@ -7,11 +7,9 @@ import (
 	"github.com/EclesioMeloJunior/wasvm/parser"
 )
 
-type exportedFunction func(...any) any
+var ErrCannotExportFunction = errors.New("cannot export function")
 
-var (
-	ErrCannotExportFunction = errors.New("cannot export function")
-)
+type exportedFunction func(...any) any
 
 type Runtime struct {
 	binary   *parser.BinaryParser
@@ -32,6 +30,7 @@ func NewRuntime(bp *parser.BinaryParser) (*Runtime, error) {
 
 func exposeExportedFunctions(runtime *Runtime) error {
 	functionSection := runtime.binary.Parsers[parser.FunctionSection].(*parser.FunctionSectionParser)
+	codeSection := runtime.binary.Parsers[parser.CodeSection].(*parser.CodeSectionParser)
 	exportedSection := runtime.binary.Parsers[parser.ExportSection].(*parser.ExportSectionParser)
 
 	runtime.Exported = make(map[string]*callFrame, len(exportedSection.Exports))
@@ -39,24 +38,25 @@ func exposeExportedFunctions(runtime *Runtime) error {
 	for _, exported := range exportedSection.Exports {
 		switch exported.Type {
 		case parser.ExportedFunc:
-			if len(functionSection.Funcs) < exported.Index {
+			if len(codeSection.FunctionsCode) < exported.Index {
 				return fmt.Errorf("%w: expected function on index %d",
 					ErrCannotExportFunction, exported.Index)
 			}
 
-			eFunc := functionSection.Funcs[exported.Index]
-			runtime.Exported[exported.Name] = buildExportedFunction(eFunc)
+			exportedFunction := functionSection.Funcs[exported.Index]
+			exportedCode := codeSection.FunctionsCode[exported.Index]
+			runtime.Exported[exported.Name] = buildExportedFunction(exportedFunction, exportedCode)
 		}
 	}
 
 	return nil
 }
 
-func buildExportedFunction(f *parser.Function) *callFrame {
+func buildExportedFunction(f *parser.Function, c *parser.CodeParser) *callFrame {
 	cf := &callFrame{
 		pc:           0,
 		stack:        make([]StackValue, 0, 1024),
-		instructions: f.Code.Body,
+		instructions: c.Body,
 		params:       make([]any, len(f.Signature.ParamsTypes)),
 		results:      make([]any, len(f.Signature.ResultsTypes)),
 	}

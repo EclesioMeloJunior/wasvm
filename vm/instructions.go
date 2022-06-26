@@ -18,5 +18,6 @@ const (
 	i32Const Instruction = 0x41
 	i32Add   Instruction = 0x6A
 	i32Sub   Instruction = 0x6B
+	i32Mul   Instruction = 0x6C
 	End      Instruction = 0x0B
 )

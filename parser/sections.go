@@ -121,7 +121,7 @@ func (t *TypeSectionParser) Parse(b *bytes.Reader) error {
 }
 
 type Function struct {
-	Index     int
+	TypeIndex int
 	Signature *FunctionSignatureParser
 	Code      *CodeParser
 }
@@ -138,13 +138,13 @@ func (f *FunctionSectionParser) Parse(b *bytes.Reader) error {
 
 	funcs := make([]*Function, funcsLen)
 	for i := 0; i < int(funcsLen); i++ {
-		_, funcIndex, err := leb128.DecodeUint(b)
+		_, typeIndex, err := leb128.DecodeUint(b)
 		if err != nil {
 			return fmt.Errorf("cannot read function type index at %d: %w", i, err)
 		}
 
 		funcs[i] = &Function{
-			Index: int(funcIndex),
+			TypeIndex: int(typeIndex),
 		}
 	}
 

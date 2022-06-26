@@ -101,6 +101,22 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			})
 
 			c.pc++
+		case i32Mul:
+			rhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			lhs, err := popEnsureType[int32](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			c.stack.push(StackValue{
+				value: lhs * rhs,
+			})
+
+			c.pc++
 		case End:
 			if len(c.results) > 0 && len(c.stack) == 0 {
 				return nil, fmt.Errorf("stack empty but expected %d return(s)",

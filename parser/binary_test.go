@@ -62,7 +62,7 @@ func TestSimpleWasm_BinaryParse_Sections(t *testing.T) {
 	assert.Len(t, functionSection.Funcs, 1)
 
 	for _, f := range functionSection.Funcs {
-		assert.Equal(t, f.Index, 0)
+		assert.Equal(t, f.TypeIndex, 0)
 	}
 
 	exportSection := wasm.Parsers[parser.ExportSection].(*parser.ExportSectionParser)
