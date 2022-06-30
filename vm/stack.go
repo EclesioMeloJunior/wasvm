@@ -51,8 +51,8 @@ func popEnsureType[T any](s *Stack) (value T, err error) {
 	case T:
 		return stackValue.value.(T), nil
 	default:
-		return value, fmt.Errorf("%w: expected i32. got %T",
-			ErrWrongType, stackValue.value)
+		return value, fmt.Errorf("%w: expected %T. got %T",
+			ErrWrongType, value, stackValue.value)
 	}
 
 }

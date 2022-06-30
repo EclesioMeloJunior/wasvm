@@ -72,10 +72,10 @@ func TestOperationsWasm(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		callFrame, ok := rt.Exported[tt.function]
+		function, ok := rt.Exported[tt.function]
 		assert.True(t, ok)
 
-		results, err := callFrame.Call(tt.lhs, tt.rhs)
+		results, err := function.Call(tt.lhs, tt.rhs)
 		assert.NoError(t, err)
 		require.Len(t, results, 1)
 
