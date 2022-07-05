@@ -69,6 +69,8 @@ func TestOperationsWasm(t *testing.T) {
 			rhs:      8,
 			expected: 72,
 		},
+
+		//TODO: implement div operation
 	}
 
 	for _, tt := range tests {
