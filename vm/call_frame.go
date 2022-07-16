@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/EclesioMeloJunior/wasvm/leb128"
+	"github.com/EclesioMeloJunior/wasvm/opcodes"
 )
 
 var (
@@ -24,10 +25,10 @@ type callFrame struct {
 
 func (c *callFrame) Call(params ...any) ([]any, error) {
 	for {
-		currentInstruction := Instruction(c.instructions[c.pc])
+		currentInstruction := opcodes.OpCode(c.instructions[c.pc])
 
 		switch currentInstruction {
-		case localGet:
+		case opcodes.LocalGet:
 			// push the parameter onto the stack.
 			// advance the pointer counter to get the variable index
 			c.pc += 1
@@ -48,7 +49,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			c.pc += uint(bytesRead)
 
-		case i32Const:
+		case opcodes.I32Const:
 			// push the i32 leb128 encoded value onto the stack.
 			// lets start read the encoded number
 			c.pc += 1
@@ -68,7 +69,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			c.stack.push(stackBasedValue)
 			c.pc += uint(bytesRead)
 
-		case i32Add:
+		case opcodes.I32Add:
 			rhs, err := popEnsureType[int32](&c.stack)
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
@@ -85,7 +86,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			c.pc++
 
-		case i32Sub:
+		case opcodes.I32Sub:
 			rhs, err := popEnsureType[int32](&c.stack)
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
@@ -101,7 +102,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			})
 
 			c.pc++
-		case i32Mul:
+
+		case opcodes.I32Mul:
 			rhs, err := popEnsureType[int32](&c.stack)
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
@@ -118,7 +120,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			c.pc++
 
-		case i32LowerThanSigned:
+		case opcodes.I32LowerThanSigned:
 			rhs, err := popEnsureType[int32](&c.stack)
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
@@ -136,7 +138,20 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			}
 
 			c.pc++
-		case End:
+
+		case opcodes.If:
+			condition, err := popEnsureType[bool](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
+			
+
+			if condition {
+				c.
+			}
+
+		case opcodes.End:
 			if len(c.results) > 0 && len(c.stack) == 0 {
 				return nil, fmt.Errorf("stack empty but expected %d return(s)",
 					len(c.results))
