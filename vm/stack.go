@@ -16,6 +16,13 @@ type StackValue struct {
 	endAt   uint
 }
 
+var TrueStackValue = StackValue{
+	value: true,
+}
+var FalseStackValue = StackValue{
+	value: false,
+}
+
 type Stack []StackValue
 
 func (s *Stack) push(value StackValue) error {
