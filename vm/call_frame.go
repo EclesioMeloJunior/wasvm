@@ -23,6 +23,32 @@ type callFrame struct {
 	instructions []byte
 }
 
+func (c *callFrame) serachForEnd() (jump int) {
+	startAt := c.pc + 1
+
+	for i, inst := range c.instructions[startAt:] {
+		switch inst {
+		case byte(opcodes.End):
+			return i
+		}
+	}
+
+	return 0
+}
+
+func (c *callFrame) searchForElseOrEnd() (jump int) {
+	startAt := c.pc + 1
+
+	for i, inst := range c.instructions[startAt:] {
+		switch inst {
+		case byte(opcodes.Else), byte(opcodes.End):
+			return i
+		}
+	}
+
+	return 0
+}
+
 func (c *callFrame) Call(params ...any) ([]any, error) {
 	for {
 		currentInstruction := opcodes.OpCode(c.instructions[c.pc])
@@ -140,15 +166,11 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			c.pc++
 
 		case opcodes.If:
+			jumpIfFalse := c.searchForElseOrEnd()
+
 			condition, err := popEnsureType[bool](&c.stack)
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
-			}
-
-			
-
-			if condition {
-				c.
 			}
 
 		case opcodes.End:
