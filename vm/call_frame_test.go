@@ -21,8 +21,8 @@ func TestIFOpCodeIntruction(t *testing.T) {
 		},
 		"only if + end": {
 			instructions: []byte{
-				0x41, 0x02, // put 02 na stack
-				0x41, 0x01, // put 01 na stack
+				0x41, 0x01, // put 02 na stack
+				0x41, 0x02, // put 01 na stack
 				0x48,                         // 02 > 01 (true)
 				0x04, 0x7F, 0x41, 0x01, 0x0B, // if condition + if end
 				0x0B, // function end
@@ -32,8 +32,8 @@ func TestIFOpCodeIntruction(t *testing.T) {
 		},
 		"if + else + end, testing the if branch": {
 			instructions: []byte{
-				0x41, 0x02, // put 01 na stack
-				0x41, 0x01, // put 02 na stack
+				0x41, 0x01, // put 01 na stack
+				0x41, 0x02, // put 02 na stack
 				0x48,                   // 02 > 01 (true)
 				0x04, 0x7F, 0x41, 0x01, // if condition
 				0x05, 0x041, 0x02, 0x0B, // else condition + if end
@@ -44,8 +44,8 @@ func TestIFOpCodeIntruction(t *testing.T) {
 		},
 		"if + else + end, testing the else branch": {
 			instructions: []byte{
-				0x41, 0x01, // put 01 na stack
-				0x41, 0x02, // put 02 na stack
+				0x41, 0x02, // put 01 na stack
+				0x41, 0x01, // put 02 na stack
 				0x48,                   // 01 > 02 (false)
 				0x04, 0x7F, 0x41, 0x01, // if condition
 				0x05, 0x041, 0x02, 0x0B, // else condition + if end

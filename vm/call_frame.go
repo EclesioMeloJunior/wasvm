@@ -185,7 +185,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 				return nil, fmt.Errorf("cannot pop: %w", err)
 			}
 
-			if rhs < lhs {
+			if lhs < rhs {
 				c.stack.push(TrueStackValue)
 			} else {
 				c.stack.push(FalseStackValue)
@@ -204,6 +204,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
 			}
+
+			fmt.Println(condition)
 
 			// check if the IF branch contains a result type
 			resultTypeByteCode := c.instructions[c.pc+1]
