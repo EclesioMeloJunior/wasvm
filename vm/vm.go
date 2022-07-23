@@ -45,45 +45,12 @@ func exposeExportedFunctions(runtime *Runtime) error {
 
 			exportedFunction := functionSection.Funcs[exported.Index]
 			exportedCode := codeSection.FunctionsCode[exported.Index]
-			runtime.Exported[exported.Name] = buildExportedFunction(exportedFunction, exportedCode)
+
+			runtime.Exported[exported.Name] = newCallFrame(exportedCode.Body,
+				exportedFunction.Signature.ParamsTypes,
+				exportedFunction.Signature.ResultsTypes)
 		}
 	}
 
 	return nil
-}
-
-func buildExportedFunction(f *parser.Function, c *parser.CodeParser) *callFrame {
-	cf := &callFrame{
-		pc:           0,
-		stack:        make([]StackValue, 0, 1024),
-		instructions: c.Body,
-		params:       make([]any, len(f.Signature.ParamsTypes)),
-		results:      make([]any, len(f.Signature.ResultsTypes)),
-	}
-
-	for idx, pt := range f.Signature.ParamsTypes {
-		switch pt.SpecByte {
-		case parser.I32_NUM_TYPE:
-			cf.params[idx] = int32(0)
-		case parser.I64_NUM_TYPE:
-			cf.params[idx] = int64(0)
-		default:
-			// TODO: implement other types at
-			panic(fmt.Sprintf("param type not supported yet: %x", pt.SpecByte))
-		}
-	}
-
-	for idx, rt := range f.Signature.ResultsTypes {
-		switch rt.SpecByte {
-		case parser.I32_NUM_TYPE:
-			cf.results[idx] = int32(0)
-		case parser.I64_NUM_TYPE:
-			cf.results[idx] = int64(0)
-		default:
-			// TODO: implement other types at
-			panic(fmt.Sprintf("result type not supported yet: %x", rt.SpecByte))
-		}
-	}
-
-	return cf
 }
