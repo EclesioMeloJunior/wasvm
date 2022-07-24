@@ -46,7 +46,8 @@ func exposeExportedFunctions(runtime *Runtime) error {
 			exportedFunction := functionSection.Funcs[exported.Index]
 			exportedCode := codeSection.FunctionsCode[exported.Index]
 
-			runtime.Exported[exported.Name] = newCallFrame(exportedCode.Body,
+			runtime.Exported[exported.Name] = newCallFrame(runtime,
+				exportedCode.Body,
 				exportedFunction.Signature.ParamsTypes,
 				exportedFunction.Signature.ResultsTypes)
 		}

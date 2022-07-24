@@ -240,8 +240,8 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 	}
 
 	c.Locals = make([]Local, localsLen)
-
 	body := make([]byte, 0)
+
 	for {
 		b, err := b.ReadByte()
 		if err != nil {
@@ -249,6 +249,10 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 		}
 
 		body = append(body, b)
+		if b == byte(opcodes.If) {
+
+		}
+
 		if b == byte(opcodes.End) {
 			break
 		}

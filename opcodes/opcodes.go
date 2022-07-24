@@ -25,4 +25,6 @@ const (
 	If   OpCode = 0x04
 	Else OpCode = 0x05
 	End  OpCode = 0x0B
+
+	Call OpCode = 0x10
 )

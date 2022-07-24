@@ -11,11 +11,13 @@ import (
 )
 
 var (
+	ErrEmptyFuncIndex   = errors.New("expected a func index got empty")
 	ErrParamOutOfBounds = errors.New("param out of bounds")
 	ErrWrongType        = errors.New("wrong type")
 )
 
 type callFrame struct {
+	rt    *Runtime
 	pc    uint
 	stack Stack
 
@@ -24,8 +26,9 @@ type callFrame struct {
 	instructions []byte
 }
 
-func newCallFrame(instructions []byte, paramTypes, resultTypes []parser.Type) *callFrame {
+func newCallFrame(rt *Runtime, instructions []byte, paramTypes, resultTypes []parser.Type) *callFrame {
 	cf := &callFrame{
+		rt:           rt,
 		pc:           0,
 		stack:        make([]StackValue, 0, 1024),
 		instructions: instructions,
@@ -239,7 +242,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 				latestItem := amountOfInstructions - 2
 				branchInstructions[latestItem] = byte(opcodes.End)
-				branchCallFrame := newCallFrame(branchInstructions, nil, resultType)
+				branchCallFrame := newCallFrame(c.rt, branchInstructions, nil, resultType)
 
 				result, err := branchCallFrame.Call(params...)
 				if err != nil {
@@ -257,7 +260,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 				branchInstructions := make([]byte, amountOfInstructions)
 				copy(branchInstructions[:], c.instructions[jumpToElse+1:jumpToElse+1+amountOfInstructions])
 
-				branchCallFrame := newCallFrame(branchInstructions, nil, resultType)
+				branchCallFrame := newCallFrame(c.rt, branchInstructions, nil, resultType)
 				result, err := branchCallFrame.Call(params...)
 				if err != nil {
 					return nil, fmt.Errorf("fail to call if branch call frame: %w", err)
@@ -290,6 +293,57 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			return results, nil
 
+		case opcodes.Call:
+			// advance the pointer counter to get the func index
+			c.pc += 1
+			reader := bytes.NewReader(c.instructions[c.pc:])
+			bytesRead, funcIdx, err := leb128.DecodeUint(reader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode u32 func index: %w", err)
+			}
+
+			if bytesRead == 0 {
+				return nil, ErrEmptyFuncIndex
+			}
+
+			functionSection := c.rt.binary.Parsers[parser.FunctionSection].(*parser.FunctionSectionParser)
+			codeSection := c.rt.binary.Parsers[parser.CodeSection].(*parser.CodeSectionParser)
+
+			codeToCall := codeSection.FunctionsCode[funcIdx]
+			codeDefs := functionSection.Funcs[funcIdx]
+
+			funcCallFrame := newCallFrame(c.rt,
+				codeToCall.Body,
+				codeDefs.Signature.ParamsTypes,
+				codeDefs.Signature.ResultsTypes)
+
+			argumentsLen := len(codeDefs.Signature.ParamsTypes)
+			funcArgs := make([]any, argumentsLen)
+			for i := 0; i < argumentsLen; i++ {
+				stackValue, err := c.stack.pop()
+				if err != nil {
+					return nil, fmt.Errorf("cannot pop value from the stack: %w", err)
+				}
+
+				// TODO: maybe check the param type before include in the argument list?
+				funcArgs[i] = stackValue.value
+			}
+
+			results, err := funcCallFrame.Call(funcArgs...)
+			if err != nil {
+				return nil, fmt.Errorf("failed to call function at index: %d", funcIdx)
+			}
+
+			expectedResultLen := len(codeDefs.Signature.ResultsTypes)
+			if len(results) != expectedResultLen {
+				return nil, fmt.Errorf("expected %d results, got %d", expectedResultLen, len(results))
+			}
+
+			for _, result := range results {
+				c.stack.push(StackValue{
+					value: result,
+				})
+			}
 		default:
 			return nil, fmt.Errorf("unknonw instruction: %s", currentInstruction)
 		}
