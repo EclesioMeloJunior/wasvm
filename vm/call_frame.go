@@ -194,6 +194,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			c.pc++
 
 		case opcodes.If:
+			// TODO: it is possible to have problems with nested if's
 			jumpToElse := c.searchInstruction(opcodes.Else)
 			jumpToIfEnd := c.searchInstruction(opcodes.End)
 			if jumpToIfEnd == 0 {
@@ -204,8 +205,6 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			if err != nil {
 				return nil, fmt.Errorf("cannot pop: %w", err)
 			}
-
-			fmt.Println(condition)
 
 			// check if the IF branch contains a result type
 			resultTypeByteCode := c.instructions[c.pc+1]
