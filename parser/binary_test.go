@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const simpleWasm = "../tests/simple.wasm"
+const simpleWasm = "../resources/simple.wasm"
 
 func TestBinaryParse_MagicNumber_VersionNumber(t *testing.T) {
 	wasm, err := parser.NewBinaryParser(simpleWasm)

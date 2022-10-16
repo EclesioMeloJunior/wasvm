@@ -91,9 +91,10 @@ func TestDecodeUint(t *testing.T) {
 
 func TestDecodeInt32(t *testing.T) {
 	tests := []struct {
-		enc                 []byte
-		expected, bytesRead int32
-		wantErr             error
+		enc       []byte
+		expected  int32
+		bytesRead int
+		wantErr   error
 	}{
 		{enc: []byte{0x13}, expected: 19, bytesRead: 1},
 		{enc: []byte{0x00}, expected: 0, bytesRead: 1},

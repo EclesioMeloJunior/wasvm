@@ -1,7 +1,6 @@
 package vm_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/EclesioMeloJunior/wasvm/parser"
@@ -23,7 +22,6 @@ func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
 
 	assert.Len(t, rt.Exported, 1)
 
-	fmt.Println(rt.Exported)
 	const exportedFun = "helloWorld"
 	callFrame, ok := rt.Exported[exportedFun]
 	assert.True(t, ok)
@@ -91,19 +89,45 @@ func TestOperationsWasm(t *testing.T) {
 }
 
 func TestFactorialWasm(t *testing.T) {
-	binaryWASM, err := parser.BinaryFormat(factorialWasm)
-	assert.NoError(t, err)
+	t.Parallel()
 
-	rt, err := vm.NewRuntime(binaryWASM)
-	assert.NoError(t, err)
-	assert.Len(t, rt.Exported, 1)
+	tests := map[string]struct {
+		param, expected int32
+	}{
+		"factorial_3": {
+			param: 3, expected: 6,
+		},
+		"factorial_5": {
+			param: 5, expected: 120,
+		},
+		"factorial_10": {
+			param: 10, expected: 3628800,
+		},
+		"factorial_100": {
+			param: 12, expected: 479001600,
+		},
+	}
 
-	fac, ok := rt.Exported["fac"]
-	assert.True(t, ok)
+	for tname, tt := range tests {
+		tt := tt
+		t.Run(tname, func(t *testing.T) {
+			t.Parallel()
 
-	results, err := fac.Call(int32(3))
-	assert.NoError(t, err)
-	require.Len(t, results, 1)
+			binaryWASM, err := parser.BinaryFormat(factorialWasm)
+			assert.NoError(t, err)
 
-	assert.Equal(t, results[0], int32(6))
+			rt, err := vm.NewRuntime(binaryWASM)
+			assert.NoError(t, err)
+			assert.Len(t, rt.Exported, 1)
+
+			fac, ok := rt.Exported["fac"]
+			assert.True(t, ok)
+
+			results, err := fac.Call(tt.param)
+			assert.NoError(t, err)
+			require.Len(t, results, 1)
+
+			assert.Equal(t, results[0], tt.expected)
+		})
+	}
 }

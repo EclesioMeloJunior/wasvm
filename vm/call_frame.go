@@ -246,7 +246,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 				result, err := branchCallFrame.Call(params...)
 				if err != nil {
-					return nil, fmt.Errorf("fail to call if branch call frame: %w", err)
+					return nil, fmt.Errorf("if branching: %w", err)
 				}
 
 				// only push the result to the stack if we spec a result from if branch call frame
@@ -263,7 +263,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 				branchCallFrame := newCallFrame(c.rt, branchInstructions, nil, resultType)
 				result, err := branchCallFrame.Call(params...)
 				if err != nil {
-					return nil, fmt.Errorf("fail to call if branch call frame: %w", err)
+					return nil, fmt.Errorf("else branching: %w", err)
 				}
 
 				// only push the result to the stack if we spec a result from if branch call frame
@@ -274,7 +274,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 				}
 			}
 
-			c.pc = jumpToIfEnd + 1
+			c.pc = jumpToIfEnd
 
 		case opcodes.End:
 			if len(c.results) > 0 && len(c.stack) == 0 {
@@ -332,7 +332,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			results, err := funcCallFrame.Call(funcArgs...)
 			if err != nil {
-				return nil, fmt.Errorf("failed to call function at index %d: %w", funcIdx, err)
+				return nil, fmt.Errorf("calling function at index %d: %w", funcIdx, err)
 			}
 
 			expectedResultLen := len(codeDefs.Signature.ResultsTypes)
@@ -345,6 +345,8 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 					value: result,
 				})
 			}
+
+			c.pc++
 		default:
 			return nil, fmt.Errorf("unknonw instruction: %s", currentInstruction)
 		}
