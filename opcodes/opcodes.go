@@ -1,6 +1,8 @@
 package opcodes
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type OpCode byte
 
@@ -8,6 +10,22 @@ func (i OpCode) String() string {
 	switch i {
 	case I32Const:
 		return "i32.const"
+	case I32Add:
+		return "i32.add"
+	case I32Sub:
+		return "i32.sub"
+	case I32Mul:
+		return "i32.mul"
+	case I32LowerThanSigned:
+		return "i32.lt_s"
+	case If:
+		return "if"
+	case Else:
+		return "else"
+	case End:
+		return "end"
+	case Call:
+		return "call"
 	default:
 		return fmt.Sprintf("%x", byte(i))
 	}
