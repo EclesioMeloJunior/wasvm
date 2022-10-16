@@ -63,13 +63,45 @@ func newCallFrame(rt *Runtime, instructions []byte, paramTypes, resultTypes []pa
 	return cf
 }
 
-func (c *callFrame) searchInstruction(oc opcodes.OpCode) (position uint) {
+// searchAtContext will try to find a specific opcode
+// inside a context (IF, BLOCK, WHILE) ignoring inner contexts
+// currently it is not possible to search for context starter or ender
+func (c *callFrame) searchAtContext(ctxStarter, ctxEnder, toSearch opcodes.OpCode) (position uint) {
 	startAt := c.pc + 1
+	contextsAcc := 0
 
-	for i, inst := range c.instructions[startAt:] {
+	for idx, inst := range c.instructions[startAt:] {
 		switch inst {
-		case byte(oc):
-			return startAt + uint(i)
+		case byte(ctxStarter):
+			contextsAcc++
+		case byte(ctxEnder):
+			if contextsAcc == 0 {
+				return 0
+			}
+			contextsAcc--
+		case byte(toSearch):
+			if contextsAcc == 0 {
+				return startAt + uint(idx)
+			}
+		}
+	}
+
+	return 0
+}
+
+func (c *callFrame) searchContextDelimiter(ctxStarter, ctxEnder opcodes.OpCode) (position uint) {
+	startAt := c.pc + 1
+	contextsAcc := 0
+
+	for idx, inst := range c.instructions[startAt:] {
+		switch inst {
+		case byte(ctxStarter):
+			contextsAcc++
+		case byte(ctxEnder):
+			if contextsAcc == 0 {
+				return startAt + uint(idx)
+			}
+			contextsAcc--
 		}
 	}
 
@@ -197,16 +229,10 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			c.pc++
 
 		case opcodes.If:
-			// TODO: it is possible to have problems with nested if's
-			jumpToElse := c.searchInstruction(opcodes.Else)
-			jumpToIfEnd := c.searchInstruction(opcodes.End)
+			jumpToElse := c.searchAtContext(opcodes.If, opcodes.End, opcodes.Else)
+			jumpToIfEnd := c.searchContextDelimiter(opcodes.If, opcodes.End)
 			if jumpToIfEnd == 0 {
 				return nil, fmt.Errorf("failed to find if end")
-			}
-
-			condition, err := popEnsureType[bool](&c.stack)
-			if err != nil {
-				return nil, fmt.Errorf("cannot pop: %w", err)
 			}
 
 			// check if the IF branch contains a result type
@@ -219,9 +245,16 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 					SpecType: parser.NumType,
 					SpecByte: resultTypeByteCode,
 				})
+			case opcodes.EmptyBlockType:
+				fmt.Println("0x40 found")
 			}
 
 			// compute the if branch call frame
+			condition, err := popEnsureType[bool](&c.stack)
+			if err != nil {
+				return nil, fmt.Errorf("cannot pop: %w", err)
+			}
+
 			if condition {
 				var amountOfInstructions uint
 				if jumpToElse != 0 {
@@ -258,6 +291,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			} else if jumpToElse != 0 { // there is a else branch
 				amountOfInstructions := jumpToIfEnd - jumpToElse
 				branchInstructions := make([]byte, amountOfInstructions)
+
 				copy(branchInstructions[:], c.instructions[jumpToElse+1:jumpToElse+1+amountOfInstructions])
 
 				branchCallFrame := newCallFrame(c.rt, branchInstructions, nil, resultType)
@@ -275,8 +309,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			}
 
 			c.pc = jumpToIfEnd
-
-		case opcodes.End:
+		case opcodes.End, opcodes.Return:
 			if len(c.results) > 0 && len(c.stack) == 0 {
 				return nil, fmt.Errorf("stack empty but expected %d return(s)",
 					len(c.results))

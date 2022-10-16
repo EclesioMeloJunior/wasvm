@@ -9,9 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const simpleWasm = "../resources/simple.wasm"
-const operationsWasm = "../resources/operations.wasm"
-const factorialWasm = "../resources/factorial.wasm"
+const (
+	simpleWasm     = "../resources/simple.wasm"
+	operationsWasm = "../resources/operations.wasm"
+	factorialWasm  = "../resources/factorial.wasm"
+	nestedIfWasm   = "../resources/nested_if.wasm"
+)
 
 func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
 	binaryWASM, err := parser.BinaryFormat(simpleWasm)
@@ -127,6 +130,52 @@ func TestFactorialWasm(t *testing.T) {
 			assert.NoError(t, err)
 			require.Len(t, results, 1)
 
+			assert.Equal(t, results[0], tt.expected)
+		})
+	}
+}
+
+// TestNestedIfWasm uses a defined wasm block called `nested_if` which
+// takes param A and param B and compares A < B, it it is false then
+// returns 3, if it is true it performs the same operation (A < B) in
+// a nested if and if it is true it multiples A by 10, otherwise it should be unreachable
+func TestNestedIfWasm(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		a, b     int32
+		expected int32
+	}{
+		"A greater than B": {
+			a:        9,
+			b:        0,
+			expected: 3,
+		},
+		"A less than B": {
+			a:        4,
+			b:        8,
+			expected: 40,
+		},
+	}
+
+	for tname, tt := range tests {
+		tt := tt
+		t.Run(tname, func(t *testing.T) {
+			t.Parallel()
+			binaryWASM, err := parser.BinaryFormat(nestedIfWasm)
+			assert.NoError(t, err)
+
+			rt, err := vm.NewRuntime(binaryWASM)
+			assert.NoError(t, err)
+			assert.Len(t, rt.Exported, 1)
+
+			nestedIf, ok := rt.Exported["nested_if"]
+			assert.True(t, ok)
+
+			results, err := nestedIf.Call(tt.a, tt.b)
+			require.NoError(t, err)
+
+			require.Len(t, results, 1)
 			assert.Equal(t, results[0], tt.expected)
 		})
 	}

@@ -26,6 +26,10 @@ func (i OpCode) String() string {
 		return "end"
 	case Call:
 		return "call"
+	case Return:
+		return "return"
+	case EmptyBlockType:
+		return "empty(blocktype)"
 	default:
 		return fmt.Sprintf("%x", byte(i))
 	}
@@ -40,9 +44,12 @@ const (
 	I32Mul             OpCode = 0x6C
 	I32LowerThanSigned OpCode = 0x48
 
-	If   OpCode = 0x04
-	Else OpCode = 0x05
-	End  OpCode = 0x0B
+	If     OpCode = 0x04
+	Else   OpCode = 0x05
+	End    OpCode = 0x0B
+	Return OpCode = 0x0F
 
 	Call OpCode = 0x10
+
+	EmptyBlockType = 0x40
 )
