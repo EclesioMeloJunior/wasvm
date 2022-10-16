@@ -249,9 +249,6 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 		}
 
 		body = append(body, b)
-		if b == byte(opcodes.If) {
-
-		}
 
 		if b == byte(opcodes.End) {
 			break

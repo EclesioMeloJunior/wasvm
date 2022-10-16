@@ -275,6 +275,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 			}
 
 			c.pc = jumpToIfEnd + 1
+
 		case opcodes.End:
 			if len(c.results) > 0 && len(c.stack) == 0 {
 				return nil, fmt.Errorf("stack empty but expected %d return(s)",
@@ -331,7 +332,7 @@ func (c *callFrame) Call(params ...any) ([]any, error) {
 
 			results, err := funcCallFrame.Call(funcArgs...)
 			if err != nil {
-				return nil, fmt.Errorf("failed to call function at index: %d", funcIdx)
+				return nil, fmt.Errorf("failed to call function at index %d: %w", funcIdx, err)
 			}
 
 			expectedResultLen := len(codeDefs.Signature.ResultsTypes)
