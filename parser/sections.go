@@ -2,10 +2,11 @@ package parser
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/EclesioMeloJunior/wasvm/leb128"
-	"github.com/EclesioMeloJunior/wasvm/opcodes"
 )
 
 type FunctionSignatureParser struct {
@@ -229,7 +230,7 @@ type CodeParser struct {
 	Locals []Local
 }
 
-func (c *CodeParser) Parse(b *bytes.Reader) error {
+func (c *CodeParser) Parse(b *bytes.Reader, len uint) error {
 	_, localsLen, err := leb128.DecodeUint(b)
 	if err != nil {
 		return fmt.Errorf("cannot read local length: %w", err)
@@ -242,17 +243,15 @@ func (c *CodeParser) Parse(b *bytes.Reader) error {
 	c.Locals = make([]Local, localsLen)
 	body := make([]byte, 0)
 
-	for {
+	for i := 0; i < int(len); i++ {
 		b, err := b.ReadByte()
-		if err != nil {
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
 			return err
 		}
 
 		body = append(body, b)
-
-		if b == byte(opcodes.End) {
-			break
-		}
 	}
 
 	c.Body = body
@@ -285,7 +284,7 @@ func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
 		}
 
 		codeParser := &CodeParser{}
-		err = codeParser.Parse(bytes.NewReader(code))
+		err = codeParser.Parse(bytes.NewReader(code), totalCodeSize)
 		if err != nil {
 			return fmt.Errorf("cannot parse code instructions at %d: %w", i, err)
 		}
