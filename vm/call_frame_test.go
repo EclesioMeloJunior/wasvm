@@ -58,11 +58,11 @@ func TestIFOpCodeIntruction(t *testing.T) {
 			instructions: []byte{
 				0x41, 0x01, // put 01 in the stack
 				0x41, 0x02, // put 02 in the stack
-				0x48,       // 02 > 01 (true)
+				0x48,       // 01 < 02 (true)
 				0x04, 0x7F, // if condition
 				0x41, 0x01, // put 01 in the stack
 				0x41, 0x02, // put 02 in the stack
-				0x48,
+				0x48,       // 01 < 02 (true)
 				0x04, 0x7F, // another if condition
 				0x41, 0x03, // put 03 in the stack
 				0x41, 0x04, // put 04 in the stack
