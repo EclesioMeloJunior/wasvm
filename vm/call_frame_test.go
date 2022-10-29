@@ -63,12 +63,13 @@ func TestIFOpCodeIntruction(t *testing.T) {
 				0x41, 0x01, // put 01 in the stack
 				0x41, 0x02, // put 02 in the stack
 				0x48,       // 01 < 02 (true)
-				0x04, 0x7F, // another if condition
+				0x04, 0x7F, // if condition
 				0x41, 0x03, // put 03 in the stack
 				0x41, 0x04, // put 04 in the stack
 				0x6A, // sum them up and return
 				0x0B, // end nested if
 				0x0B, // end if
+				0x0B,
 			},
 			expected: []any{int32(7)}, // we spect the number 1 only
 			results:  []any{int32(0)}, //define the result type
@@ -83,7 +84,7 @@ func TestIFOpCodeIntruction(t *testing.T) {
 				stack:        make([]StackValue, 0, 1024),
 				instructions: tt.instructions,
 				params:       []any{},
-				results:      []any{int32(0)},
+				results:      tt.results,
 			}
 
 			res, err := cf.Call()
