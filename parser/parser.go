@@ -36,6 +36,9 @@ func BinaryFormat(filepath string) (*BinaryParser, error) {
 	return bp, nil
 }
 
+var ErrNoTypesToBound = errors.New("no types to bound")
+var ErrNoCodeToBound = errors.New("no code to bound")
+
 func bondFunctionSignatureAndCode(bp *BinaryParser) error {
 	functionSection := bp.Parsers[FunctionSection].(*FunctionSectionParser)
 	if len(functionSection.Funcs) < 1 {
@@ -43,7 +46,14 @@ func bondFunctionSignatureAndCode(bp *BinaryParser) error {
 	}
 
 	typeSection := bp.Parsers[TypeSection].(*TypeSectionParser)
+	if len(typeSection.Types) < 1 {
+		return ErrNoTypesToBound
+	}
+
 	codeSection := bp.Parsers[CodeSection].(*CodeSectionParser)
+	if len(typeSection.Types) < 1 {
+		return ErrNoCodeToBound
+	}
 
 	for idx, function := range functionSection.Funcs {
 		if len(typeSection.Types) < function.TypeIndex {

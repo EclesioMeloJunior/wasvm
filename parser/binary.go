@@ -145,6 +145,5 @@ func (bp *BinaryParser) parseSectionContents(sectionID byte, sectionLen uint) er
 		return fmt.Errorf("failed while parsing section 0x%x: %w", sectionID, err)
 	}
 
-	bp.Parsers[sectionID] = parser
 	return nil
 }
