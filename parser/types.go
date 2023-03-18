@@ -10,12 +10,12 @@ const (
 
 const (
 	I32_NUM_TYPE    byte = 0x7F
-	I64_NUM_TYPE         = 0x7E
-	F32_NUM_TYPE         = 0x7D
-	F64_NUM_TYPE         = 0x7C
-	VEC_TYPE             = 0x7B
-	FUNC_REF_TYPE        = 0x70
-	EXTERN_REF_TYPE      = 0x6F
+	I64_NUM_TYPE    byte = 0x7E
+	F32_NUM_TYPE    byte = 0x7D
+	F64_NUM_TYPE    byte = 0x7C
+	VEC_TYPE        byte = 0x7B
+	FUNC_REF_TYPE   byte = 0x70
+	EXTERN_REF_TYPE byte = 0x6F
 
 	FunctionTag = 0x60
 )
