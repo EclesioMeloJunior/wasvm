@@ -296,3 +296,9 @@ func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
 
 	return nil
 }
+
+type ImportsSectionParser struct{}
+
+func (i *ImportsSectionParser) Parse(b *bytes.Reader) error {
+	return nil
+}

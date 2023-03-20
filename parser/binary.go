@@ -13,6 +13,7 @@ import (
 
 const (
 	TypeSection     byte = 0x01
+	ImportsSection  byte = 0x02
 	FunctionSection byte = 0x03
 	ExportSection   byte = 0x07
 	CodeSection     byte = 0x0A
@@ -58,6 +59,7 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 
 		Parsers: map[byte]Parser{
 			TypeSection:     new(TypeSectionParser),
+			ImportsSection:  new(ImportsSectionParser),
 			FunctionSection: new(FunctionSectionParser),
 			ExportSection:   new(ExportSectionParser),
 			CodeSection:     new(CodeSectionParser),

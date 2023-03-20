@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	simpleWasm     = "../resources/simple.wasm"
-	operationsWasm = "../resources/operations.wasm"
-	factorialWasm  = "../resources/factorial.wasm"
-	nestedIfWasm   = "../resources/nested_if.wasm"
+	simpleWasm       = "../resources/simple.wasm"
+	operationsWasm   = "../resources/operations.wasm"
+	factorialWasm    = "../resources/factorial.wasm"
+	nestedIfWasm     = "../resources/nested_if.wasm"
+	simpleImportWasm = "../resources/simple_import.wasm"
 )
 
 func TestSimpleWasm_ExportedFunction_Execution(t *testing.T) {
@@ -179,4 +180,13 @@ func TestNestedIfWasm(t *testing.T) {
 			assert.Equal(t, results[0], tt.expected)
 		})
 	}
+}
+
+func TestSimpleWasmImportFunction(t *testing.T) {
+	// consoleLogFunc := func(n int32) {
+	// 	fmt.Printf("output: %d\n", n)
+	// }
+
+	_, err := parser.BinaryFormat(simpleImportWasm)
+	require.NoError(t, err)
 }
