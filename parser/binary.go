@@ -16,6 +16,7 @@ const (
 	ImportsSection  byte = 0x02
 	FunctionSection byte = 0x03
 	ExportSection   byte = 0x07
+	StartSection    byte = 0x08
 	CodeSection     byte = 0x0A
 )
 
@@ -63,6 +64,7 @@ func NewBinaryParser(filepath string) (*BinaryParser, error) {
 			FunctionSection: new(FunctionSectionParser),
 			ExportSection:   new(ExportSectionParser),
 			CodeSection:     new(CodeSectionParser),
+			StartSection:    new(StartSectionParser),
 		},
 	}, nil
 }
@@ -105,22 +107,20 @@ func (bp *BinaryParser) ParseVersion() error {
 
 func (bp *BinaryParser) ParseSection() error {
 	sectionByte, err := bp.reader.ReadByte()
-	if errors.Is(err, io.EOF) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("cannot read section byte: %w", err)
+	if err != nil {
+		return fmt.Errorf("reading section byte: %w", err)
 	}
 
 	_, sectionsLen, err := leb128.DecodeUint(bp.reader.(*bytes.Reader))
 	if err != nil {
-		return fmt.Errorf("cannot read section len: %w", err)
+		return fmt.Errorf("reading section len: %w", err)
 	}
 
 	if sectionsLen > 0 {
+		fmt.Println(sectionByte, "sections:", sectionsLen)
 		err := bp.parseSectionContents(sectionByte, sectionsLen)
 		if err != nil {
-			return fmt.Errorf(
-				"cannot parse: %w", err)
+			return fmt.Errorf("parsing section contents: %w", err)
 		}
 	}
 

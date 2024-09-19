@@ -220,14 +220,9 @@ func (e *ExportSectionParser) Parse(b *bytes.Reader) error {
 	return nil
 }
 
-type Local struct {
-	Count uint
-	Type  Type
-}
-
 type CodeParser struct {
 	Body   []byte
-	Locals []Local
+	Locals []Type
 }
 
 func (c *CodeParser) Parse(b *bytes.Reader, len uint) error {
@@ -237,12 +232,10 @@ func (c *CodeParser) Parse(b *bytes.Reader, len uint) error {
 	}
 
 	if localsLen > 0 {
-		panic("locals not supported yet!")
+		c.parseLocals(b, localsLen)
 	}
 
-	c.Locals = make([]Local, localsLen)
 	body := make([]byte, 0)
-
 	for i := 0; i < int(len); i++ {
 		b, err := b.ReadByte()
 		if errors.Is(err, io.EOF) {
@@ -255,6 +248,34 @@ func (c *CodeParser) Parse(b *bytes.Reader, len uint) error {
 	}
 
 	c.Body = body
+	return nil
+}
+
+func (c *CodeParser) parseLocals(b *bytes.Reader, len uint) error {
+	c.Locals = make([]Type, len)
+
+	for i := uint(0); i < len; i++ {
+		localType, err := b.ReadByte()
+		if err != nil {
+			return fmt.Errorf("while reading local type byte: %w", err)
+		}
+
+		switch localType {
+		case I32_NUM_TYPE, I64_NUM_TYPE:
+			c.Locals[i] = Type{
+				SpecType: NumType,
+				SpecByte: localType,
+			}
+		default:
+			unsupportedType := Type{
+				SpecByte: localType,
+			}
+
+			panic(fmt.Sprintf("local type not supported yet: %s (%v)",
+				unsupportedType.String(), localType))
+		}
+	}
+
 	return nil
 }
 
@@ -294,6 +315,12 @@ func (c *CodeSectionParser) Parse(b *bytes.Reader) error {
 
 	c.FunctionsCode = codes
 
+	return nil
+}
+
+type StartSectionParser struct{}
+
+func (i *StartSectionParser) Parse(b *bytes.Reader) error {
 	return nil
 }
 
